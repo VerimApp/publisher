@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable
+from typing import ClassVar, Dict, Protocol, Any
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -47,23 +47,6 @@ def handle_grpc_response_error(func):
     return wrapper
 
 
-def apply_tags(tags: Iterable[str]):
-    """
-    Декоратор используется для добавления тегов к роутерам
-    """
-
-    def outer(func):
-        def inner(*args, **kwargs):
-            routers = func(*args, **kwargs)
-            for router in routers:
-                router.tags = list(set([*(router.tags or list()), *tags]))
-            return routers
-
-        return inner
-
-    return outer
-
-
 def handle_orm_error(func):
     async def wrapper(*args, **kwargs):
         try:
@@ -77,3 +60,35 @@ def handle_orm_error(func):
             raise
 
     return wrapper
+
+
+class Dataclass(Protocol):
+    __dataclass_fields__: ClassVar[Dict[str, Any]]
+
+
+def row_to_model(wrapper_dataclass: Dataclass | None = None):
+    """
+    Конвертация объекта `Row` в модель БД или датакласс.
+
+    В случае, когда выборка происходит по определенным столбцам таблицы/таблиц,
+    объект `Row` будет содержать данные для каждого столбца, а не инстанс модели,  TODO: проверить это
+    поэтому необходимо передать датакласс, который поддерживает хранение возвращаемых столбцов.
+    """
+
+    def outer(func):
+        async def inner(*args, **kwargs):
+            row: Row | None = await func(*args, **kwargs)
+            if not row or not row._fields:
+                return row
+
+            if len(row._fields) == 1:
+                return row._mapping.get(row._fields[0])
+
+            assert (
+                wrapper_dataclass is not None
+            ), "Dataclass is required for row with custom column set."
+            return wrapper_dataclass(**row._mapping)
+
+        return inner
+
+    return outer

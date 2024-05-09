@@ -3,13 +3,9 @@ import asyncio
 from contextlib import asynccontextmanager, AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker, async_scoped_session
 from sqlalchemy.orm import (
-    sessionmaker,
-    Session,
     declarative_base,
-    scoped_session,
 )
 
 

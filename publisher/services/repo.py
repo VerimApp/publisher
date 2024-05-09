@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from sqlalchemy.orm import Query
+from sqlalchemy import Result
 
 from models.publication import Publication
 from utils.repo import IRepo
@@ -16,7 +16,7 @@ class IPublicationRepo(IRepo):
     @abstractmethod
     async def selection(
         self, user_id: int | None, size: int | None, page: int | None
-    ) -> Query[Publication]: ...
+    ) -> Result[Publication]: ...
 
     @abstractmethod
     async def get_by_id(self, publication_id: int) -> Publication | None: ...

@@ -1,7 +1,6 @@
 from dataclasses import asdict
 
-from sqlalchemy import and_, select
-from sqlalchemy.orm import Query
+from sqlalchemy import and_, select, Result
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination.default import Params
 
@@ -13,7 +12,7 @@ from schemas.publication import PublicationSchema
 from services.publications.entries import CreatePublicationData
 from utils.repo import pagination_transformer
 from utils.types import PublicationType
-from utils.decorators import handle_orm_error
+from utils.decorators import handle_orm_error, row_to_model
 
 
 class PublicationRepo(IPublicationRepo):
@@ -34,7 +33,7 @@ class PublicationRepo(IPublicationRepo):
     @handle_orm_error
     async def selection(
         self, user_id: int | None, size: int | None, page: int | None
-    ) -> Query[Publication]:
+    ) -> Result[Publication]:
         size = size or settings.PAGINATION_DEFAULT_PAGE_SIZE
         page = page or settings.PAGINATION_DEFAULT_PAGE
         async with self.session_factory() as session:
@@ -60,6 +59,7 @@ class PublicationRepo(IPublicationRepo):
             )
 
     @handle_orm_error
+    @row_to_model()
     async def get_by_id(self, publication_id: int) -> Publication | None:
         async with self.session_factory() as session:
             result = await session.execute(

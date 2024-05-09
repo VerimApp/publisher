@@ -3,13 +3,14 @@ from sqlalchemy import select, update
 from services.repo import IVoteRepo
 from models.vote import Vote
 from utils.types import VoteType
-from utils.decorators import handle_orm_error
+from utils.decorators import handle_orm_error, row_to_model
 
 
 class VoteRepo(IVoteRepo):
     model = Vote
 
     @handle_orm_error
+    @row_to_model()
     async def get(self, user_id: int, publication_id: int) -> VoteType | None:
         async with self.session_factory() as session:
             result = await session.execute(
