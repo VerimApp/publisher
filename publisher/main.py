@@ -4,7 +4,7 @@ import logging
 import logging.config
 from concurrent import futures
 
-import publisher_pb2_grpc
+from protobufs.compiled import publisher_pb2_grpc
 from config import settings
 from config.di import Container
 

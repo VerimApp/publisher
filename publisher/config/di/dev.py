@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 
-import auth_pb2_grpc
-from auth_grpc_typed import AuthStub
+from protobufs.compiled import auth_pb2_grpc
+from protobufs.compiled.auth_grpc_typed import AuthStub
 from config import settings
 from config.celery import app as _celery_app
 from config.db import Database

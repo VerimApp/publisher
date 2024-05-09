@@ -1,11 +1,11 @@
 from dependency_injector.wiring import Provide, inject
 
-import publisher_pb2_grpc
-from publisher_pb2 import (
+from protobufs.compiled import publisher_pb2_grpc
+from protobufs.compiled.publisher_pb2 import (
     PublicationResponse,
     PublicationsSelectionResponse,
 )
-from auth_pb2 import (
+from protobufs.compiled.auth_pb2 import (
     Empty,
 )
 from schemas import (
