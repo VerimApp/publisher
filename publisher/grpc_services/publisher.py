@@ -22,13 +22,13 @@ from utils.decorators import handle_grpc_request_error
 class GRPCPublisher(publisher_pb2_grpc.PublisherServicer):
     @handle_grpc_request_error(PublicationResponse)
     @inject
-    def publications_create(
+    async def publications_create(
         self,
         request,
         context,
         service: ICreatePublication = Provide[Container.create_publication],
     ):
-        publication = service(
+        publication = await service(
             user_id=request.user_id, schema=CreatePublicationSchema(url=request.url)
         )
         return PublicationResponse(
@@ -43,13 +43,13 @@ class GRPCPublisher(publisher_pb2_grpc.PublisherServicer):
 
     @handle_grpc_request_error(PublicationsSelectionResponse)
     @inject
-    def publications_selection(
+    async def publications_selection(
         self,
         request,
         context,
         repo: IPublicationRepo = Provide[Container.publication_repo],
     ):
-        selection = repo.selection(
+        selection = await repo.selection(
             user_id=request.user_id, size=request.size, page=request.page
         )
         return PublicationsSelectionResponse(
@@ -73,13 +73,13 @@ class GRPCPublisher(publisher_pb2_grpc.PublisherServicer):
 
     @handle_grpc_request_error(Empty)
     @inject
-    def publications_vote(
+    async def publications_vote(
         self,
         request,
         context,
         service: IVote = Provide[Container.create_vote],
     ):
-        service(
+        await service(
             user_id=request.user_id,
             publication_id=request.publication_id,
             schema=VoteSchema(believed=request.believed),

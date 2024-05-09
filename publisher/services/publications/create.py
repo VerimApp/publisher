@@ -12,7 +12,7 @@ from .entries import CreatePublicationData, PublicationData
 
 class ICreatePublication(ABC):
     @abstractmethod
-    def __call__(
+    async def __call__(
         self, user_id: int, schema: CreatePublicationSchema
     ) -> PublicationData: ...
 
@@ -21,12 +21,12 @@ class CreatePublication(ICreatePublication):
     def __init__(self, repo: IPublicationRepo) -> None:
         self.repo = repo
 
-    def __call__(
+    async def __call__(
         self, user_id: int, schema: CreatePublicationSchema
     ) -> PublicationData:
         schema = self._clean(schema)
         schema = self._to_entry(schema)
-        publication = self._create(user_id, schema)
+        publication = await self._create(user_id, schema)
         return self._to_schema(publication)
 
     def _clean(self, schema: CreatePublicationSchema) -> CreatePublicationSchema:
@@ -39,8 +39,8 @@ class CreatePublication(ICreatePublication):
             raise Custom400Exception(_("Platform is not supported."))
         return CreatePublicationData(url=schema.url, type=type)
 
-    def _create(self, user_id: int, entry: CreatePublicationData) -> PublicationType:
-        return self.repo.create(user_id, entry)
+    async def _create(self, user_id: int, entry: CreatePublicationData) -> PublicationType:
+        return await self.repo.create(user_id, entry)
 
     def _to_schema(self, publication: PublicationType) -> PublicationData:
         return PublicationData(

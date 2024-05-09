@@ -9,7 +9,7 @@ from utils.shortcuts import get_object_or_404
 
 class IVote(ABC):
     @abstractmethod
-    def __call__(
+    async def __call__(
         self, user_id: int, publication_id: int, schema: VoteSchema
     ) -> None: ...
 
@@ -19,27 +19,27 @@ class Vote(IVote):
         self.repo = repo
         self.publication_repo = publication_repo
 
-    def __call__(self, user_id: int, publication_id: int, schema: VoteSchema) -> None:
-        self._validate_publication_id(publication_id)
-        vote = self._get(user_id, publication_id)
+    async def __call__(self, user_id: int, publication_id: int, schema: VoteSchema) -> None:
+        await self._validate_publication_id(publication_id)
+        vote = await self._get(user_id, publication_id)
         if vote:
-            self._update(vote, schema)
+            await self._update(vote, schema)
         else:
-            self._create(user_id, publication_id, schema)
+            await self._create(user_id, publication_id, schema)
 
-    def _validate_publication_id(self, publication_id: int) -> None:
+    async def _validate_publication_id(self, publication_id: int) -> None:
         get_object_or_404(
-            self.publication_repo.get_by_id(publication_id),
+            await self.publication_repo.get_by_id(publication_id),
             msg=_("Publication not found."),
         )
 
-    def _get(self, user_id: int, publication_id: int) -> VoteType | None:
-        return self.repo.get(user_id, publication_id)
+    async def _get(self, user_id: int, publication_id: int) -> VoteType | None:
+        return await self.repo.get(user_id, publication_id)
 
-    def _create(
+    async def _create(
         self, user_id: int, publication_id: int, schema: VoteSchema
     ) -> VoteType:
-        return self.repo.create(user_id, publication_id, schema.believed)
+        return await self.repo.create(user_id, publication_id, schema.believed)
 
-    def _update(self, vote: VoteType, schema: VoteSchema) -> None:
-        self.repo.update(vote.id, schema.believed)
+    async def _update(self, vote: VoteType, schema: VoteSchema) -> None:
+        await self.repo.update(vote.id, schema.believed)

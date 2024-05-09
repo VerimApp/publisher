@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from sqlalchemy import and_
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Query
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination.default import Params
@@ -20,24 +20,27 @@ class PublicationRepo(IPublicationRepo):
     model = Publication
 
     @handle_orm_error
-    def create(self, user_id: int, entry: CreatePublicationData) -> PublicationType:
+    async def create(
+        self, user_id: int, entry: CreatePublicationData
+    ) -> PublicationType:
         entry.type = entry.type.value
         publication = self.model(user_id=user_id, **asdict(entry))
-        with self.session_factory() as session:
+        async with self.session_factory() as session:
             session.add(publication)
-            session.commit()
-            session.refresh(publication)
+            await session.commit()
+            await session.refresh(publication)
         return publication
 
     @handle_orm_error
-    def selection(
+    async def selection(
         self, user_id: int | None, size: int | None, page: int | None
     ) -> Query[Publication]:
         size = size or settings.PAGINATION_DEFAULT_PAGE_SIZE
         page = page or settings.PAGINATION_DEFAULT_PAGE
-        with self.session_factory() as session:
-            return paginate(
-                session.query(
+        async with self.session_factory() as session:
+            return await paginate(
+                conn=session,
+                query=select(
                     self.model.id,
                     self.model.url,
                     self.model.type,
@@ -57,10 +60,9 @@ class PublicationRepo(IPublicationRepo):
             )
 
     @handle_orm_error
-    def get_by_id(self, publication_id: int) -> Publication | None:
-        with self.session_factory() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.id == publication_id)
-                .first()
+    async def get_by_id(self, publication_id: int) -> Publication | None:
+        async with self.session_factory() as session:
+            result = await session.execute(
+                select(self.model).filter(self.model.id == publication_id)
             )
+            return result.first()

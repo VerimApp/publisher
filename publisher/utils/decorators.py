@@ -12,9 +12,9 @@ grpc_logger = logging.getLogger("grpc")
 
 def handle_grpc_request_error(return_class):
     def outer(func):
-        def inner(*args, **kwargs):
+        async def inner(*args, **kwargs):
             try:
-                return func(*args, **kwargs)
+                return await func(*args, **kwargs)
             except CustomException as e:
                 grpc_logger.info(
                     f"Custom exception has occured - {str(e)}",
@@ -65,9 +65,9 @@ def apply_tags(tags: Iterable[str]):
 
 
 def handle_orm_error(func):
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            return await func(*args, **kwargs)
         except SQLAlchemyError as e:
             orm_logger.error(
                 f"Error while processing orm query - {str(e)}",
