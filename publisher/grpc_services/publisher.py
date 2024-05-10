@@ -1,4 +1,5 @@
 from dependency_injector.wiring import Provide, inject
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from protobufs.compiled import publisher_pb2_grpc
 from protobufs.compiled.publisher_pb2 import (
@@ -16,20 +17,24 @@ from config.di import Container
 from services.publications import ICreatePublication
 from services.votes import IVote
 from services.repo import IPublicationRepo
-from utils.decorators import handle_grpc_request_error
+from utils.decorators import handle_grpc_request_error, inject_session
 
 
 class GRPCPublisher(publisher_pb2_grpc.PublisherServicer):
     @handle_grpc_request_error(PublicationResponse)
+    @inject_session
     @inject
     async def publications_create(
         self,
         request,
         context,
+        session: AsyncSession,
         service: ICreatePublication = Provide[Container.create_publication],
     ):
         publication = await service(
-            user_id=request.user_id, schema=CreatePublicationSchema(url=request.url)
+            session=session,
+            user_id=request.user_id,
+            schema=CreatePublicationSchema(url=request.url),
         )
         return PublicationResponse(
             id=publication.id,
@@ -42,15 +47,20 @@ class GRPCPublisher(publisher_pb2_grpc.PublisherServicer):
         )
 
     @handle_grpc_request_error(PublicationsSelectionResponse)
+    @inject_session
     @inject
     async def publications_selection(
         self,
         request,
         context,
+        session: AsyncSession,
         repo: IPublicationRepo = Provide[Container.publication_repo],
     ):
         selection = await repo.selection(
-            user_id=request.user_id, size=request.size, page=request.page
+            session=session,
+            user_id=request.user_id,
+            size=request.size,
+            page=request.page,
         )
         return PublicationsSelectionResponse(
             items=[
@@ -72,14 +82,17 @@ class GRPCPublisher(publisher_pb2_grpc.PublisherServicer):
         )
 
     @handle_grpc_request_error(Empty)
+    @inject_session
     @inject
     async def publications_vote(
         self,
         request,
         context,
+        session: AsyncSession,
         service: IVote = Provide[Container.create_vote],
     ):
         await service(
+            session=session,
             user_id=request.user_id,
             publication_id=request.publication_id,
             schema=VoteSchema(believed=request.believed),

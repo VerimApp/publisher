@@ -1,4 +1,5 @@
 from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.repo import IVoteRepo
 from models.vote import Vote
@@ -11,32 +12,36 @@ class VoteRepo(IVoteRepo):
 
     @handle_orm_error
     @row_to_model()
-    async def get(self, user_id: int, publication_id: int) -> VoteType | None:
-        async with self.session_factory() as session:
-            result = await session.execute(
-                select(self.model).filter(
-                    Vote.user_id == user_id, Vote.publication_id == publication_id
-                )
+    async def get(
+        self, session: AsyncSession, user_id: int, publication_id: int
+    ) -> VoteType | None:
+        result = await session.execute(
+            select(self.model).filter(
+                Vote.user_id == user_id, Vote.publication_id == publication_id
             )
-            return result.first()
+        )
+        return result.first()
 
     @handle_orm_error
     async def create(
-        self, user_id: int, publication_id: int, believed: bool | None
+        self,
+        session: AsyncSession,
+        user_id: int,
+        publication_id: int,
+        believed: bool | None,
     ) -> VoteType:
         vote = self.model(
             user_id=user_id, publication_id=publication_id, believed=believed
         )
-        async with self.session_factory() as session:
-            session.add(vote)
-            await session.commit()
-            await session.refresh(vote)
+        session.add(vote)
+        await session.flush([vote])
+        await session.refresh(vote)
         return vote
 
     @handle_orm_error
-    async def update(self, vote_id: int, believed: bool | None) -> None:
-        async with self.session_factory() as session:
-            await session.execute(
-                update(self.model).filter(Vote.id == vote_id).values(believed=believed)
-            )
-            await session.commit()
+    async def update(
+        self, session: AsyncSession, vote_id: int, believed: bool | None
+    ) -> None:
+        await session.execute(
+            update(self.model).filter(Vote.id == vote_id).values(believed=believed)
+        )

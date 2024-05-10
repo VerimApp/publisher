@@ -27,12 +27,10 @@ class Container(containers.DeclarativeContainer):
     )
     auth_grpc = providers.Singleton(AuthStub, connection=_auth_grpc)
 
-    db = providers.Singleton(Database, db_url=settings.DATABASE_URL)
+    db = providers.Resource(Database, db_url=settings.DATABASE_URL)
 
-    publication_repo = providers.Singleton(
-        PublicationRepo, session_factory=db.provided.session
-    )
-    _vote_repo = providers.Singleton(VoteRepo, session_factory=db.provided.session)
+    publication_repo = providers.Singleton(PublicationRepo)
+    _vote_repo = providers.Singleton(VoteRepo)
 
     create_publication = providers.Singleton(CreatePublication, repo=publication_repo)
     create_vote = providers.Singleton(

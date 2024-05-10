@@ -1,16 +1,10 @@
 from abc import ABC
-from contextlib import AbstractAsyncContextManager
 from typing import Callable
 from dataclasses import fields
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 
 class IRepo(ABC):
-    def __init__(
-        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
-    ) -> None:
-        self.session_factory = session_factory
+    pass
 
 
 def pagination_transformer(schema: Callable) -> Callable:
